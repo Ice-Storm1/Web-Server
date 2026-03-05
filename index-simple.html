@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annotazioni</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Annotazioni</h1>
+        
+        <form id="annotationForm">
+            <input type="hidden" id="editId">
+            <input type="date" id="date" required>
+            <select id="priority" required>
+                <option value="">Priorità</option>
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="bassa">Bassa</option>
+            </select>
+            <input type="text" id="description" placeholder="Descrizione..." required>
+            <button type="submit" id="submitBtn">Aggiungi</button>
+        </form>
+        
+        <div id="annotationsList"></div>
+        
+        <footer>
+            <p>Creato da <strong>IceStorm</strong> &copy; 2026 - Tutti i diritti riservati</p>
+        </footer>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p id="modalDesc"></p>
+        </div>
+    </div>
+    
+    <script src="script-simple.js"></script>
+</body>
+</html>

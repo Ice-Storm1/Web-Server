@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Annotazioni</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #e0e0e0; }
+        .container { max-width: 600px; margin: 0 auto; }
+        form { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        input, select { padding: 10px; border: 1px solid #333; border-radius: 4px; background: #2a2a2a; color: #e0e0e0; }
+        button { padding: 10px 20px; background: #4a4a4a; color: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; }
+        .annotation { background: #2a2a2a; padding: 15px; margin-bottom: 10px; border-radius: 4px; border-left: 4px solid #555; }
+        .debug-log { background: #333; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Debug Annotazioni</h1>
+        
+        <form id="annotationForm">
+            <input type="date" id="date" required>
+            <select id="priority" required>
+                <option value="">Priorità</option>
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="bassa">Bassa</option>
+            </select>
+            <input type="text" id="description" placeholder="Descrizione..." required>
+            <input type="text" id="tags" placeholder="Tag...">
+            <button type="submit">Aggiungi</button>
+        </form>
+        
+        <button onclick="testConnection()">Test Connessione</button>
+        <button onclick="clearLog()">Pulisci Log</button>
+        
+        <div id="debugLog" class="debug-log"></div>
+        
+        <div id="annotationsList"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('annotationForm');
+        const list = document.getElementById('annotationsList');
+        const debugLog = document.getElementById('debugLog');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${timestamp}] ${message}`;
+            debugLog.appendChild(div);
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+        
+        function clearLog() {
+            debugLog.innerHTML = '';
+        }
+        
+        document.getElementById('date').valueAsDate = new Date();
+        
+        async function testConnection() {
+            log('Test connessione API...', 'info');
+            try {
+                const res = await fetch('/api/annotations');
+                if (res.ok) {
+                    const data = await res.json();
+                    log('✓ Connessione OK, trovate ' + data.length + ' annotazioni', 'success');
+                } else {
+                    log('✗ Connessione fallita: ' + res.status, 'error');
+                }
+            } catch (err) {
+                log('✗ Errore: ' + err.message, 'error');
+            }
+        }
+        
+        async function loadAnnotations() {
+            log('Caricamento annotazioni...', 'info');
+            try {
+                const res = await fetch('/api/annotations');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                log('✓ Caricate ' + data.length + ' annotazioni', 'success');
+                renderAnnotations(data);
+            } catch (err) {
+                log('✗ Errore caricamento: ' + err.message, 'error');
+                list.innerHTML = '<div style="color: #ff6b6b;">Errore di connessione</div>';
+            }
+        }
+        
+        function renderAnnotations(annotations) {
+            list.innerHTML = annotations.map(a => `
+                <div class="annotation ${a.priority}">
+                    <div>
+                        <strong>${a.date}</strong> - ${a.priority} - ${a.description}
+                        ${a.tags ? '<br><small>Tag: ' + a.tags.join(', ') + '</small>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            log('Invio form...', 'info');
+            
+            const data = {
+                date: document.getElementById('date').value,
+                priority: document.getElementById('priority').value,
+                description: document.getElementById('description').value,
+                tags: document.getElementById('tags').value
+            };
+            
+            log('Dati: ' + JSON.stringify(data), 'info');
+            
+            try {
+                const res = await fetch('/api/annotations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    const result = await res.json();
+                    log('✓ Annotazione creata con ID: ' + result.id, 'success');
+                    form.reset();
+                    document.getElementById('date').valueAsDate = new Date();
+                    loadAnnotations();
+                } else {
+                    log('✗ Errore: ' + res.status, 'error');
+                }
+            } catch (err) {
+                log('✗ Errore: ' + err.message, 'error');
+            }
+        });
+        
+        // Auto-test on load
+        setTimeout(() => {
+            log('Avvio automatico test...', 'info');
+            testConnection();
+            loadAnnotations();
+        }, 1000);
+    </script>
+</body>
+</html>
